@@ -1,0 +1,45 @@
+<Window
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Class="SimuladorTransferenciaCalor.View.TemperaturaWindow"
+    Title="Alterar temperatura"
+    Width="420"
+    Height="240"
+    WindowStartupLocation="CenterOwner"
+    Background="#F4F7FB">
+
+    <Border Margin="16"
+            Background="#FFFFFF"
+            CornerRadius="18"
+            BorderBrush="#DCE6F5"
+            BorderThickness="1"
+            Padding="22">
+
+        <StackPanel Spacing="18">
+
+            <TextBlock Text="Digite a nova temperatura em Celsius:"
+                       FontSize="17"
+                       FontWeight="SemiBold"
+                       Foreground="#1F2937"
+                       TextWrapping="Wrap"/>
+
+            <TextBox Name="TemperaturaInput"
+                     Watermark="Exemplo: 35.00"
+                     FontSize="16"
+                     Height="38"
+                     Background="#F8FAFF"/>
+
+            <Button Content="Confirmar"
+                    Click="ConfirmarButton_Click"
+                    HorizontalAlignment="Center"
+                    Width="150"
+                    Height="40"
+                    Background="#2F6FED"
+                    Foreground="White"
+                    CornerRadius="10"/>
+
+        </StackPanel>
+
+    </Border>
+
+</Window>
