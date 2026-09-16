@@ -1,0 +1,69 @@
+REQUISITOS DO SIMULADOR DE TRANSFERENCIA DE CALOR
+
+1. REQUISITOS DE SOFTWARE
+
+- .NET 8 SDK instalado.
+- Sistema operacional com suporte a aplicativos desktop .NET e Avalonia.
+- Conexao com a internet na primeira compilacao, para baixar os pacotes NuGet.
+- Editor de codigo recomendado: Visual Studio Code ou Visual Studio.
+
+O projeto foi desenvolvido e testado em Linux.
+
+2. FRAMEWORK E PACOTES
+
+- .NET 8 (TargetFramework: net8.0)
+- Avalonia 11.2.3
+- Avalonia.Desktop 11.2.3
+- Avalonia.Themes.Fluent 11.2.3
+
+Os pacotes sao restaurados automaticamente pelo arquivo SimuladorTransferenciaCalor.csproj.
+
+3. COMO VERIFICAR A INSTALACAO DO .NET
+
+Abra um terminal e execute:
+
+    dotnet --version
+
+O resultado deve indicar uma versao 8.x do .NET SDK.
+
+4. COMO RESTAURAR AS DEPENDENCIAS
+
+Na pasta raiz do projeto, execute:
+
+    dotnet restore
+
+5. COMO COMPILAR O PROJETO
+
+Na pasta raiz do projeto, execute:
+
+    dotnet build
+
+A compilacao deve terminar sem erros.
+
+6. COMO EXECUTAR O PROGRAMA
+
+Na pasta raiz do projeto, execute:
+
+    dotnet run
+
+A janela do simulador sera aberta automaticamente.
+
+7. ESTRUTURA NECESSARIA
+
+Mantenha os seguintes arquivos e pastas na mesma pasta do projeto:
+
+- App.axaml
+- App.axaml.cs
+- Program.cs
+- SimuladorTransferenciaCalor.csproj
+- Dados/
+- Engine/
+- Model/
+- View/
+
+8. OBSERVACOES
+
+- Nao e necessario instalar banco de dados ou servidor externo.
+- O programa funciona como uma aplicacao desktop local.
+- Para selecionar o tamanho da matriz, informe numeros inteiros nos campos de linhas e colunas.
+- A temperatura da simulacao e informada em graus Celsius.
