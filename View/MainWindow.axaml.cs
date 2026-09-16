@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using SimuladorTransferenciaCalor.Models;
@@ -29,6 +32,15 @@ namespace SimuladorTransferenciaCalor.View
 
         // Campo que controla a execução automática
         private DispatcherTimer? timerExecucao;
+
+        // Cronometra o tempo de execução da simulação
+        private readonly Stopwatch cronometro = new Stopwatch();
+
+        // Campo que representa o tempo exibido na tela
+        private TextBlock tempoText = null!;
+
+        // Imagens dos materiais carregadas durante a execução
+        private readonly Dictionary<string, Bitmap?> imagensMateriais = new();
 
         // Campo que guarda a matriz lógica atual
         private MatrizCorpos? matrizCorposAtual;
@@ -68,6 +80,10 @@ namespace SimuladorTransferenciaCalor.View
             // Localiza o Grid da matriz
             matrizVisual =
                 this.FindControl<Grid>("MatrizVisual")!;
+
+            // Localiza o temporizador visual
+            tempoText =
+                this.FindControl<TextBlock>("TempoText")!;
         }
 
         // Carrega os componentes visuais
@@ -136,6 +152,7 @@ namespace SimuladorTransferenciaCalor.View
 
             if (timerExecucao != null)
             {
+                cronometro.Start();
                 timerExecucao.Start();
             }
         }
@@ -147,7 +164,9 @@ namespace SimuladorTransferenciaCalor.View
         {
             if (timerExecucao != null)
             {
+                cronometro.Stop();
                 timerExecucao.Stop();
+                AtualizarTempoVisual();
             }
         }
 
@@ -163,6 +182,7 @@ namespace SimuladorTransferenciaCalor.View
 
             simuladorAtual.ExecutarPasso();
             AtualizarMatrizVisual();
+            AtualizarTempoVisual();
         }
 
         // Cria a matriz visual e lógica
@@ -177,6 +197,9 @@ namespace SimuladorTransferenciaCalor.View
             {
                 timerExecucao.Stop();
             }
+
+            cronometro.Reset();
+            AtualizarTempoVisual();
 
             // Remove os elementos antigos
             matrizVisual.Children.Clear();
@@ -281,8 +304,34 @@ namespace SimuladorTransferenciaCalor.View
                                 VerticalAlignment.Center,
 
                             // Define o tamanho do texto
-                            FontSize = 14
+                            FontSize = 14,
+
+                            // Destaca a posição e a temperatura sobre a imagem
+                            FontWeight = FontWeight.Bold,
+                            Foreground = Brushes.Black,
+                            Padding = new Avalonia.Thickness(4)
                         };
+
+                    // Cria a imagem do material
+                    Image imagemMaterial =
+                        new Image
+                        {
+                            Source = ObterImagemMaterial(nomeMaterial),
+                            Stretch = Avalonia.Media.Stretch.UniformToFill
+                        };
+
+                    // Cria o filtro vermelho controlado pela temperatura
+                    Border filtroCalor =
+                        new Border
+                        {
+                            Background = ObterFiltroCalor(25.0)
+                        };
+
+                    Grid conteudoCelula =
+                        new Grid();
+                    conteudoCelula.Children.Add(imagemMaterial);
+                    conteudoCelula.Children.Add(filtroCalor);
+                    conteudoCelula.Children.Add(texto);
 
                     // Cria o quadrado visual
                     Border corpoVisual =
@@ -300,12 +349,8 @@ namespace SimuladorTransferenciaCalor.View
                             Margin =
                                 new Avalonia.Thickness(2),
 
-                            // Define a cor inicial pela temperatura
-                            Background =
-                                ObterCorTemperatura(25.0, nomeMaterial),
-
-                            // Coloca o texto no quadrado
-                            Child = texto
+                            // Coloca imagem, filtro e texto no quadrado
+                            Child = conteudoCelula
                         };
 
                     // Permite clicar no quadrado
@@ -450,16 +495,26 @@ namespace SimuladorTransferenciaCalor.View
                 double temperatura =
                     corpo.GetTemperatura();
 
-                // Atualiza a cor visual pela temperatura do corpo
-                borda.Background =
-                    ObterCorTemperatura(temperatura, corpo.GetMaterial().GetNome());
-
-                // Atualiza o texto
-                if (borda.Child is TextBlock texto)
+                if (borda.Child is Grid conteudoCelula)
                 {
-                    texto.Text =
-                        $"{linha + 1},{coluna + 1}\n"
-                        + $"{temperatura:F2} °C";
+                    if (conteudoCelula.Children[0] is Image imagemMaterial)
+                    {
+                        imagemMaterial.Source =
+                            ObterImagemMaterial(corpo.GetMaterial().GetNome());
+                    }
+
+                    if (conteudoCelula.Children[1] is Border filtroCalor)
+                    {
+                        filtroCalor.Background =
+                            ObterFiltroCalor(temperatura);
+                    }
+
+                    if (conteudoCelula.Children[2] is TextBlock texto)
+                    {
+                        texto.Text =
+                            $"{linha + 1},{coluna + 1}\n"
+                            + $"{temperatura:F2} °C";
+                    }
                 }
 
                 // Destaca o quadrado selecionado
@@ -503,65 +558,69 @@ namespace SimuladorTransferenciaCalor.View
             return null;
         }
 
-        // Retorna a cor correspondente ao material
-        private IBrush ObterCorMaterial(string material)
+        private Bitmap? ObterImagemMaterial(string nomeMaterial)
         {
-            // Verifica se é cobre
-            if (material == "Cobre")
+            if (imagensMateriais.TryGetValue(nomeMaterial, out Bitmap? imagem))
             {
-                return Brushes.OrangeRed;
+                return imagem;
             }
 
-            // Verifica se é alumínio
-            if (material == "Alumínio")
+            string nomeArquivo = nomeMaterial switch
             {
-                return Brushes.LightGray;
+                "Aço" => "aco.png",
+                "Água" => "agua.png",
+                "Alumínio" => "aluminio.png",
+                "Cobre" => "cobre.png",
+                "Concreto" => "concreto.png",
+                "Ferro" => "ferro.png",
+                "Madeira" => "madeira.png",
+                "Vidro" => "vidro.png",
+                _ => string.Empty
+            };
+
+            if (string.IsNullOrEmpty(nomeArquivo))
+            {
+                imagensMateriais[nomeMaterial] = null;
+                return null;
             }
 
-            // Verifica se é ferro
-            if (material == "Ferro")
-            {
-                return Brushes.DarkGray;
-            }
+            string caminhoImagem =
+                Path.Combine(AppContext.BaseDirectory, "img", nomeArquivo);
 
-            // Verifica se é aço
-            if (material == "Aço")
-            {
-                return Brushes.SlateGray;
-            }
+            imagem = File.Exists(caminhoImagem)
+                ? new Bitmap(caminhoImagem)
+                : null;
 
-            // Verifica se é vidro
-            if (material == "Vidro")
-            {
-                return Brushes.LightBlue;
-            }
-
-            // Verifica se é madeira
-            if (material == "Madeira")
-            {
-                return Brushes.SandyBrown;
-            }
-
-            // Verifica se é água
-            if (material == "Água")
-            {
-                return Brushes.DodgerBlue;
-            }
-
-            // Verifica se é concreto
-            if (material == "Concreto")
-            {
-                return Brushes.DarkKhaki;
-            }
-
-            // Retorna branco como padrão
-            return Brushes.White;
+            imagensMateriais[nomeMaterial] = imagem;
+            return imagem;
         }
 
-        // Mantém a cor original do material sem alterar pela temperatura
-        private IBrush ObterCorTemperatura(double temperatura, string nomeMaterial)
+        // Calcula um filtro vermelho suave conforme a temperatura aumenta
+        private IBrush ObterFiltroCalor(double temperatura)
         {
-            return ObterCorMaterial(nomeMaterial);
+            const double temperaturaFria = 25.0;
+            const double temperaturaQuente = 100.0;
+
+            double progresso =
+                Math.Clamp(
+                    (temperatura - temperaturaFria)
+                    / (temperaturaQuente - temperaturaFria),
+                    0.0,
+                    1.0);
+
+            double transicaoSuave =
+                progresso * progresso * (3.0 - 2.0 * progresso);
+
+            byte opacidade =
+                (byte)Math.Round(220.0 * transicaoSuave);
+
+            return new SolidColorBrush(
+                Color.FromArgb(opacidade, 220, 20, 30));
+        }
+
+        private void AtualizarTempoVisual()
+        {
+            tempoText.Text = cronometro.Elapsed.ToString(@"hh\:mm\:ss");
         }
 
         private static int LerInteiro(string? valor, int padrao)

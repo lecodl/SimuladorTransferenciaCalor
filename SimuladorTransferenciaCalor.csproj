@@ -13,4 +13,8 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="img/**/*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

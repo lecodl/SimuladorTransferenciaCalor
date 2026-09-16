@@ -7,7 +7,7 @@
         Background="#F3F6FB">
 
     <Grid Margin="20"
-          RowDefinitions="Auto,*">
+            RowDefinitions="Auto,Auto,*">
 
         <Border Grid.Row="0"
                 CornerRadius="16"
@@ -96,7 +96,16 @@
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="1"
+        <TextBlock x:Name="TempoText"
+                   Grid.Row="1"
+                   Text="00:00:00"
+                   Margin="0,14,0,0"
+                   HorizontalAlignment="Center"
+                   FontSize="24"
+                   FontWeight="SemiBold"
+                   Foreground="#243B53" />
+
+        <Border Grid.Row="2"
                 Margin="0,18,0,0"
                 Padding="18"
                 Background="#FFFFFF"
